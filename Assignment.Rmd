@@ -2,12 +2,10 @@
 title: "Machine Learning Assignment"
 author: "Karl Melgarejo Castillo"
 date: "28/11/2021"
-output: html_document
+output: 
+  html_document:
+    keep_md: true
 ---
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
 
 ## Executive summary
 
