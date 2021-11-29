@@ -1,0 +1,147 @@
+---
+title: "Machine Learning Assignment"
+author: "Karl Melgarejo Castillo"
+date: "28/11/2021"
+output: html_document
+---
+
+## Executive summary
+
+In this document I analyze data from sensors that measures how a weight-lifting exercise is performed in order to find the best predicting model of the manner in which the exercise is performed by using machine learning technics. I conclude that the best model uses a Random Forest algorithm with ten Principal Components as regressors. 
+
+## 1. Analysis
+
+In this section I describe the analysis made to find the best predicting model.
+
+### 1.1 Exploratory analysis
+First I explore the structure of the *training* and the *testing* data base with the function *str*. As it is shown below, the *training* data has 19622 observations and 160 variables; while the *testing* data has 20 observations and 160 variables.
+
+```{r, echo=FALSE}
+theURL1 <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+training <- read.csv(theURL1, sep = ",")
+theURL2 <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+testing <- read.csv(theURL2, sep = ",")
+```
+
+| Dimensions / Data set     |       Training       |        Testing       | 
+| :---                      |        :----:        |        :----:        | 
+| Number of observations    | `r dim(training)[1]` |  `r dim(testing)[1]` | 
+| Number of variables       | `r dim(training)[2]` |  `r dim(testing)[2]` | 
+
+
+The variable *classe* was used to record the manner in which the exercise is performed and appears only in the *training* data set. As you can see below, it has five classes: class A: exactly according to the specification; class B: throwing the elbows to the front; class C: lifting the dumbbell only halfway; class D: lowering the dumbbell only halfway; and class E: throwing the hips to the front.
+
+```{r, echo=FALSE}
+table(training$classe)
+```
+On the other hand, information was recorded from acceleration, gyroscope and magnetometer on the belt, forearm, arm, and dumbbell for the six participants in this experiment; and their coordinates (x, y, and z axis) were registered in both data sets. We can see below the 40 variables used to record this information, which are complete (i.e. there is no NAs):
+
+```{r, echo=FALSE}
+g <- grep("gyros|accel|magnet", names(training))
+imu <- names(training)[g]
+g <- grep("var", names(training))
+o <- names(training)[g]
+imu <- imu[!(imu %in% o)] 
+imu
+```
+The rest of variables such as the mean, standard deviation, etc. for the pitch, yaw, etc. are not complete (i.e. they have many NAs) which makes them not suitable for regressors. 
+
+### 1.2 Machine learning model and results
+
+I estimated five (5) models to predict the variable *classe* by using the 40 regressors shown in the previous section, which are the coordinates of the acceleration, gyroscope and magnetometer on the belt, forearm, arm, and dumbbell. 
+
+To reduce the number of regressors and avoid over-fitting problems, I used Principal Components Analysis (PCA) to estimate ten components that capture 80% of the variance of these regressors, which will be used in three of the five models instead of the 40 original regressors.
+
+Regarding cross validation, I used a 10-fold cross validation in all of the five models. As training method, I used *Random Forest*, *Gradient Boosting*, and *Linear Discriminant Analysis*. In the first one, I used only the 10 principal components as regressors; and in the remaining two, I used both, the principal components and the 40 regressors.
+
+It is important to mention that the *training* data set was divided in two new sets with the function *createDataPartition*, in order to train these models in one of these two sets and then test their accuracy in the other data set. In this way we will be able to estimate the out-of-sample errors.
+
+The results are shown in the table below:
+ 
+```{r, echo=FALSE, cache=TRUE}
+library(caret)
+set.seed(1111)
+t <- subset(training, select = c("classe", imu))        
+t$classe <- as.factor(t$classe)
+
+# Split data
+inTrain <- createDataPartition(y=t$classe, p=0.7, list=FALSE)
+t_train <- t[inTrain,]
+t_test <- t[-inTrain,]
+
+# PC Analysis
+pc <- preProcess(t_train[,-1], method="pca", thresh = 0.8)
+t_train_pc <- predict(pc, t_train[,-1])
+
+# Training estimation
+tr1 <- train(y = t_train$classe, x = t_train_pc, method = "rf",
+        trControl = trainControl(method = "cv", number = 10),
+        verbose=FALSE
+        )
+
+tr2 <- train(y = t_train$classe, x = t_train_pc, method = "gbm",
+        trControl = trainControl(method = "cv", number = 10),
+        verbose=FALSE
+        )
+
+tr21 <- train(classe ~., data = t_train, method = "gbm",
+        trControl = trainControl(method = "cv", number = 10),
+        verbose=FALSE
+        )
+
+tr3 <- train(y = t_train$classe, x = t_train_pc, method = "lda",
+        trControl = trainControl(method = "cv", number = 10),
+        verbose=FALSE
+        )
+
+tr31 <- train(classe ~., data = t_train, method = "lda",
+        trControl = trainControl(method = "cv", number = 10),
+        verbose=FALSE
+        )
+
+# PC Prediction (regressors)
+t_test_pc <- predict(pc,t_test[,-1])
+
+# Predict Clases
+pr1 <- predict(tr1, t_test_pc)
+pr2 <- predict(tr2, t_test_pc)
+pr21 <- predict(tr21, t_test[,-1])
+pr3 <- predict(tr3, t_test_pc)
+pr31 <- predict(tr31, t_test[,-1])
+
+# Accuracy out of sample
+c1 <- confusionMatrix(t_test$classe, pr1)
+c2 <- confusionMatrix(t_test$classe, pr2)
+c21 <- confusionMatrix(t_test$classe, pr21)
+c3 <- confusionMatrix(t_test$classe, pr3)
+c31 <- confusionMatrix(t_test$classe, pr31)
+
+```
+
+
+| Model                        |       Regressors        |  Accuracy on test data    |     Out of sample error     | 
+| :---                         |          :----:         |        :----:             |         :----:              | 
+| Random Forest                | 10 Principal components |`r c1$overall["Accuracy"]` |`r 1-c1$overall["Accuracy"]` | 
+| Gradient Boosting Machine    | 10 Principal components |`r c2$overall["Accuracy"]` |`r 1-c2$overall["Accuracy"]` | 
+| Gradient Boosting Machine    | Non-PCA: 40 Regressors  |`r c21$overall["Accuracy"]`|`r 1-c21$overall["Accuracy"]`| 
+| Linear discriminant analysis | 10 Principal components |`r c3$overall["Accuracy"]` |`r 1-c3$overall["Accuracy"]` | 
+| Linear discriminant analysis | Non-PCA: 40 Regressors  |`r c31$overall["Accuracy"]`|`r 1-c31$overall["Accuracy"]`| 
+
+As it is shown in the table above, two models have the highest accuracy ratio: the Random Forest model with 10 principal components as regressors, with 94.5% of accuracy; and the Gradient Boosting Machine model with the original 40 regressors, with 90.8% of accuracy. These accuracy ratios were calculated with the *confusionMatrix* function and using the *classe* variable in the second division of the training data set (a sort of a testing data set).
+
+With these accuracy ratios, it is possible to estimate the out of sample error that can be achieved with a new data set, which are 5.5% and 9.2% with the Random Forest and the Gradient Boosting Machine models, respectively.
+
+Due to the high accuracy ratio and less number of regressors, I selected the Random Forest model to predict the 20 different test cases. The result of the estimated Random Forest model is shown below:
+
+```{r, echo=FALSE}
+tr1
+```
+
+## 2. Conclusion
+
+A Random Forest algorithm, with ten Principal Components of the forty variables that measures the axis of the acceleration, gyroscope and magnetometer on the belt, forearm, arm, and dumbbell, is found to be the best model to predict the manner in which the exercise is performed.
+
+This model has an estimated out-of-sample accuracy and out-of-sample error of 94.5% and 5.5%, respectively.   
+
+
+
