@@ -4,8 +4,12 @@ author: "Karl Melgarejo Castillo"
 date: "28/11/2021"
 output: html_document
 editor_options: 
-  chunk_output_type: inline
+  chunk_output_type: console
 ---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
 
 ## Executive summary
 

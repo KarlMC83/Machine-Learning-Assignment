@@ -5,6 +5,10 @@ date: "28/11/2021"
 output: html_document
 ---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
 ## Executive summary
 
 In this document I analyze data from sensors that measures how a weight-lifting exercise is performed in order to find the best predicting model of the manner in which the exercise is performed by using machine learning technics. I conclude that the best model uses a Random Forest algorithm with ten Principal Components as regressors. 
