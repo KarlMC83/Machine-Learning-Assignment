@@ -181,6 +181,7 @@ pre code {
 <div id="exploratory-analysis" class="section level3">
 <h3>1.1 Exploratory analysis</h3>
 <p>First I explore the structure of the <em>training</em> and the <em>testing</em> data base with the function <em>str</em>. As it is shown below, the <em>training</em> data has 19622 observations and 160 variables; while the <em>testing</em> data has 20 observations and 160 variables.</p>
+<p><code>{r, echo=FALSE} theURL1 &lt;- &quot;https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv&quot; training &lt;- read.csv(theURL1, sep = &quot;,&quot;) theURL2 &lt;- &quot;https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv&quot; testing &lt;- read.csv(theURL2, sep = &quot;,&quot;)</code></p>
 <table>
 <thead>
 <tr class="header">
@@ -192,36 +193,19 @@ pre code {
 <tbody>
 <tr class="odd">
 <td align="left">Number of observations</td>
-<td align="center">19622</td>
-<td align="center">20</td>
+<td align="center"><code>r dim(training)[1]</code></td>
+<td align="center"><code>r dim(testing)[1]</code></td>
 </tr>
 <tr class="even">
 <td align="left">Number of variables</td>
-<td align="center">160</td>
-<td align="center">160</td>
+<td align="center"><code>r dim(training)[2]</code></td>
+<td align="center"><code>r dim(testing)[2]</code></td>
 </tr>
 </tbody>
 </table>
 <p>The variable <em>classe</em> was used to record the manner in which the exercise is performed and appears only in the <em>training</em> data set. As you can see below, it has five classes: class A: exactly according to the specification; class B: throwing the elbows to the front; class C: lifting the dumbbell only halfway; class D: lowering the dumbbell only halfway; and class E: throwing the hips to the front.</p>
-<pre><code>## 
-##    A    B    C    D    E 
-## 5580 3797 3422 3216 3607</code></pre>
-<p>On the other hand, information was recorded from acceleration, gyroscope and magnetometer on the belt, forearm, arm, and dumbbell for the six participants in this experiment; and their coordinates (x, y, and z axis) were registered in both data sets. We can see below the 40 variables used to record this information, which are complete (i.e. there is no NAs):</p>
-<pre><code>##  [1] &quot;total_accel_belt&quot;     &quot;gyros_belt_x&quot;         &quot;gyros_belt_y&quot;        
-##  [4] &quot;gyros_belt_z&quot;         &quot;accel_belt_x&quot;         &quot;accel_belt_y&quot;        
-##  [7] &quot;accel_belt_z&quot;         &quot;magnet_belt_x&quot;        &quot;magnet_belt_y&quot;       
-## [10] &quot;magnet_belt_z&quot;        &quot;total_accel_arm&quot;      &quot;gyros_arm_x&quot;         
-## [13] &quot;gyros_arm_y&quot;          &quot;gyros_arm_z&quot;          &quot;accel_arm_x&quot;         
-## [16] &quot;accel_arm_y&quot;          &quot;accel_arm_z&quot;          &quot;magnet_arm_x&quot;        
-## [19] &quot;magnet_arm_y&quot;         &quot;magnet_arm_z&quot;         &quot;total_accel_dumbbell&quot;
-## [22] &quot;gyros_dumbbell_x&quot;     &quot;gyros_dumbbell_y&quot;     &quot;gyros_dumbbell_z&quot;    
-## [25] &quot;accel_dumbbell_x&quot;     &quot;accel_dumbbell_y&quot;     &quot;accel_dumbbell_z&quot;    
-## [28] &quot;magnet_dumbbell_x&quot;    &quot;magnet_dumbbell_y&quot;    &quot;magnet_dumbbell_z&quot;   
-## [31] &quot;total_accel_forearm&quot;  &quot;gyros_forearm_x&quot;      &quot;gyros_forearm_y&quot;     
-## [34] &quot;gyros_forearm_z&quot;      &quot;accel_forearm_x&quot;      &quot;accel_forearm_y&quot;     
-## [37] &quot;accel_forearm_z&quot;      &quot;magnet_forearm_x&quot;     &quot;magnet_forearm_y&quot;    
-## [40] &quot;magnet_forearm_z&quot;</code></pre>
-<p>The rest of variables such as the mean, standard deviation, etc. for the pitch, yaw, etc. are not complete (i.e. they have many NAs) which makes them not suitable for regressors.</p>
+<p><code>{r, echo=FALSE} table(training$classe)</code> On the other hand, information was recorded from acceleration, gyroscope and magnetometer on the belt, forearm, arm, and dumbbell for the six participants in this experiment; and their coordinates (x, y, and z axis) were registered in both data sets. We can see below the 40 variables used to record this information, which are complete (i.e. there is no NAs):</p>
+<p><code>{r, echo=FALSE} g &lt;- grep(&quot;gyros|accel|magnet&quot;, names(training)) imu &lt;- names(training)[g] g &lt;- grep(&quot;var&quot;, names(training)) o &lt;- names(training)[g] imu &lt;- imu[!(imu %in% o)]  imu</code> The rest of variables such as the mean, standard deviation, etc. for the pitch, yaw, etc. are not complete (i.e. they have many NAs) which makes them not suitable for regressors.</p>
 </div>
 <div id="machine-learning-model-and-results" class="section level3">
 <h3>1.2 Machine learning model and results</h3>
@@ -230,75 +214,60 @@ pre code {
 <p>Regarding cross validation, I used a 10-fold cross validation in all of the five models. As training method, I used <em>Random Forest</em>, <em>Gradient Boosting</em>, and <em>Linear Discriminant Analysis</em>. In the first one, I used only the 10 principal components as regressors; and in the remaining two, I used both, the principal components and the 40 regressors.</p>
 <p>It is important to mention that the <em>training</em> data set was divided in two new sets with the function <em>createDataPartition</em>, in order to train these models in one of these two sets and then test their accuracy in the other data set. In this way we will be able to estimate the out-of-sample errors.</p>
 <p>The results are shown in the table below:</p>
-<table>
-<thead>
-<tr class="header">
-<th align="left">Model</th>
-<th align="center">Regressors</th>
-<th align="center">Accuracy on test data</th>
-<th align="center">Out of sample error</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="left">Random Forest</td>
-<td align="center">10 Principal components</td>
-<td align="center">0.9447749</td>
-<td align="center">0.0552251</td>
-</tr>
-<tr class="even">
-<td align="left">Gradient Boosting Machine</td>
-<td align="center">10 Principal components</td>
-<td align="center">0.6832625</td>
-<td align="center">0.3167375</td>
-</tr>
-<tr class="odd">
-<td align="left">Gradient Boosting Machine</td>
-<td align="center">Non-PCA: 40 Regressors</td>
-<td align="center">0.9082413</td>
-<td align="center">0.0917587</td>
-</tr>
-<tr class="even">
-<td align="left">Linear discriminant analysis</td>
-<td align="center">10 Principal components</td>
-<td align="center">0.3906542</td>
-<td align="center">0.6093458</td>
-</tr>
-<tr class="odd">
-<td align="left">Linear discriminant analysis</td>
-<td align="center">Non-PCA: 40 Regressors</td>
-<td align="center">0.6457094</td>
-<td align="center">0.3542906</td>
-</tr>
-</tbody>
-</table>
-<p>As it is shown in the table above, two models have the highest accuracy ratio: the Random Forest model with 10 principal components as regressors, with 94.5% of accuracy; and the Gradient Boosting Machine model with the original 40 regressors, with 90.8% of accuracy. These accuracy ratios were calculated with the <em>confusionMatrix</em> function and using the <em>classe</em> variable in the second division of the training data set (a sort of a testing data set).</p>
-<p>With these accuracy ratios, it is possible to estimate the out of sample error that can be achieved with a new data set, which are 5.5% and 9.2% with the Random Forest and the Gradient Boosting Machine models, respectively.</p>
-<p>Due to the high accuracy ratio and less number of regressors, I selected the Random Forest model to predict the 20 different test cases. The result of the estimated Random Forest model is shown below:</p>
-<pre><code>## Random Forest 
-## 
-## 13737 samples
-##    10 predictor
-##     5 classes: &#39;A&#39;, &#39;B&#39;, &#39;C&#39;, &#39;D&#39;, &#39;E&#39; 
-## 
-## No pre-processing
-## Resampling: Cross-Validated (10 fold) 
-## Summary of sample sizes: 12364, 12364, 12364, 12362, 12363, 12364, ... 
-## Resampling results across tuning parameters:
-## 
-##   mtry  Accuracy   Kappa    
-##    2    0.9389253  0.9226945
-##    6    0.9337558  0.9161389
-##   10    0.9235633  0.9032575
-## 
-## Accuracy was used to select the optimal model using the largest value.
-## The final value used for the model was mtry = 2.</code></pre>
+<p>```{r, echo=FALSE, cache=TRUE} library(caret) set.seed(1111) t &lt;- subset(training, select = c(“classe”, imu))<br />
+t<span class="math inline">\(classe &lt;- as.factor(t\)</span>classe)</p>
 </div>
 </div>
+<div id="split-data" class="section level1">
+<h1>Split data</h1>
+<p>inTrain &lt;- createDataPartition(y=t$classe, p=0.7, list=FALSE) t_train &lt;- t[inTrain,] t_test &lt;- t[-inTrain,]</p>
+</div>
+<div id="pc-analysis" class="section level1">
+<h1>PC Analysis</h1>
+<p>pc &lt;- preProcess(t_train[,-1], method=“pca”, thresh = 0.8) t_train_pc &lt;- predict(pc, t_train[,-1])</p>
+</div>
+<div id="training-estimation" class="section level1">
+<h1>Training estimation</h1>
+<p>tr1 &lt;- train(y = t_train$classe, x = t_train_pc, method = “rf”, trControl = trainControl(method = “cv”, number = 10), verbose=FALSE )</p>
+<p>tr2 &lt;- train(y = t_train$classe, x = t_train_pc, method = “gbm”, trControl = trainControl(method = “cv”, number = 10), verbose=FALSE )</p>
+<p>tr21 &lt;- train(classe ~., data = t_train, method = “gbm”, trControl = trainControl(method = “cv”, number = 10), verbose=FALSE )</p>
+<p>tr3 &lt;- train(y = t_train$classe, x = t_train_pc, method = “lda”, trControl = trainControl(method = “cv”, number = 10), verbose=FALSE )</p>
+<p>tr31 &lt;- train(classe ~., data = t_train, method = “lda”, trControl = trainControl(method = “cv”, number = 10), verbose=FALSE )</p>
+</div>
+<div id="pc-prediction-regressors" class="section level1">
+<h1>PC Prediction (regressors)</h1>
+<p>t_test_pc &lt;- predict(pc,t_test[,-1])</p>
+</div>
+<div id="predict-clases" class="section level1">
+<h1>Predict Clases</h1>
+<p>pr1 &lt;- predict(tr1, t_test_pc) pr2 &lt;- predict(tr2, t_test_pc) pr21 &lt;- predict(tr21, t_test[,-1]) pr3 &lt;- predict(tr3, t_test_pc) pr31 &lt;- predict(tr31, t_test[,-1])</p>
+</div>
+<div id="accuracy-out-of-sample" class="section level1">
+<h1>Accuracy out of sample</h1>
+<p>c1 &lt;- confusionMatrix(t_test<span class="math inline">\(classe, pr1) c2 &lt;- confusionMatrix(t_test\)</span>classe, pr2) c21 &lt;- confusionMatrix(t_test<span class="math inline">\(classe, pr21) c3 &lt;- confusionMatrix(t_test\)</span>classe, pr3) c31 &lt;- confusionMatrix(t_test$classe, pr31)</p>
+<pre><code>
+
+| Model                        |       Regressors        |  Accuracy on test data    |     Out of sample error     | 
+| :---                         |          :----:         |        :----:             |         :----:              | 
+| Random Forest                | 10 Principal components |`r c1$overall[&quot;Accuracy&quot;]` |`r 1-c1$overall[&quot;Accuracy&quot;]` | 
+| Gradient Boosting Machine    | 10 Principal components |`r c2$overall[&quot;Accuracy&quot;]` |`r 1-c2$overall[&quot;Accuracy&quot;]` | 
+| Gradient Boosting Machine    | Non-PCA: 40 Regressors  |`r c21$overall[&quot;Accuracy&quot;]`|`r 1-c21$overall[&quot;Accuracy&quot;]`| 
+| Linear discriminant analysis | 10 Principal components |`r c3$overall[&quot;Accuracy&quot;]` |`r 1-c3$overall[&quot;Accuracy&quot;]` | 
+| Linear discriminant analysis | Non-PCA: 40 Regressors  |`r c31$overall[&quot;Accuracy&quot;]`|`r 1-c31$overall[&quot;Accuracy&quot;]`| 
+
+As it is shown in the table above, two models have the highest accuracy ratio: the Random Forest model with 10 principal components as regressors, with 94.5% of accuracy; and the Gradient Boosting Machine model with the original 40 regressors, with 90.8% of accuracy. These accuracy ratios were calculated with the *confusionMatrix* function and using the *classe* variable in the second division of the training data set (a sort of a testing data set).
+
+With these accuracy ratios, it is possible to estimate the out of sample error that can be achieved with a new data set, which are 5.5% and 9.2% with the Random Forest and the Gradient Boosting Machine models, respectively.
+
+Due to the high accuracy ratio and less number of regressors, I selected the Random Forest model to predict the 20 different test cases. The result of the estimated Random Forest model is shown below:
+
+```{r, echo=FALSE}
+tr1</code></pre>
 <div id="conclusion" class="section level2">
 <h2>2. Conclusion</h2>
 <p>A Random Forest algorithm, with ten Principal Components of the forty variables that measures the axis of the acceleration, gyroscope and magnetometer on the belt, forearm, arm, and dumbbell, is found to be the best model to predict the manner in which the exercise is performed.</p>
 <p>This model has an estimated out-of-sample accuracy and out-of-sample error of 94.5% and 5.5%, respectively.</p>
+</div>
 </div>
 
 

@@ -3,6 +3,8 @@ title: "Machine Learning Assignment"
 author: "Karl Melgarejo Castillo"
 date: "28/11/2021"
 output: html_document
+editor_options: 
+  chunk_output_type: inline
 ---
 
 ## Executive summary
